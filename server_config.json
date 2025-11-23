@@ -1,0 +1,22 @@
+{
+    "mcpServers": {        
+        "llm_inference": {
+            "command": "uv",
+            "args": [
+                "run",
+                "starter_server.py"
+            ],
+            "env": {
+                "PYTHONUNBUFFERED": "1"
+            }
+        },
+        "sqlite": {
+            "command": "uvx",
+            "args": [
+                "mcp-server-sqlite",
+                "--db-path",
+                "test.db"
+            ]
+        }
+    }
+}

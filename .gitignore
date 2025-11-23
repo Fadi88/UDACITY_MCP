@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+scraped_content/
+test.db
