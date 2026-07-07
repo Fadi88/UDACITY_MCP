@@ -327,6 +327,7 @@ class ChatSession:
         self.tool_to_server: Dict[str, str] = {}
         self.sqlite_server: Server | None = None
         self.data_extractor: DataExtractor | None = None
+        self.messages = []
 
     async def cleanup_servers(self) -> None:
         """Clean up all servers properly."""
@@ -338,7 +339,7 @@ class ChatSession:
 
     async def process_query(self, query: str) -> None:
         """Process a user query and extract/store relevant data."""
-        messages = [{'role': 'user', 'content': query}]
+        self.messages.append({'role': 'user', 'content': query})
         model_name = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20240620')
         
         tools_to_pass = self.available_tools
@@ -353,7 +354,7 @@ class ChatSession:
             "max_tokens": 2024,
             "model": model_name,
             "tools": tools_to_pass,
-            "messages": messages
+            "messages": self.messages
         }
         if system_prompt:
             kwargs["system"] = system_prompt
@@ -372,10 +373,10 @@ class ChatSession:
                     print(content.text, end="", flush=True)
             
             if not has_tool_use:
-                messages.append({'role': 'assistant', 'content': response.content})
+                self.messages.append({'role': 'assistant', 'content': response.content})
                 break
                 
-            messages.append({'role': 'assistant', 'content': response.content})
+            self.messages.append({'role': 'assistant', 'content': response.content})
             
             tool_results = []
             for content in response.content:
@@ -429,13 +430,13 @@ class ChatSession:
                             'is_error': True
                         })
             
-            messages.append({'role': 'user', 'content': tool_results})
+            self.messages.append({'role': 'user', 'content': tool_results})
             
             kwargs = {
                 "max_tokens": 2024,
                 "model": model_name,
                 "tools": tools_to_pass,
-                "messages": messages
+                "messages": self.messages
             }
             if system_prompt:
                 kwargs["system"] = system_prompt
@@ -483,7 +484,7 @@ class ChatSession:
             
         try:
             result = await self.sqlite_server.execute_tool("read_query", {
-                "query": "SELECT company_name, plan_name, input_tokens, output_tokens, currency FROM pricing_plans ORDER BY id DESC LIMIT 5"
+                "query": "SELECT company_name, plan_name, input_tokens, output_tokens, currency FROM pricing_plans ORDER BY id DESC LIMIT 1"
             })
             
             if hasattr(result, 'content') and result.content:
