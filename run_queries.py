@@ -1,3 +1,10 @@
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 import asyncio
 from pathlib import Path
 from starter_client import Configuration, Server, ChatSession
@@ -32,20 +39,25 @@ async def run_automated_evaluation():
             
         print("\n=== STARTING AUTOMATED QUERIES ===")
         
-        # Query 1
-        q1 = "How much does cloudrift ai (https://www.cloudrift.ai/inference) charge for deepseek v3?"
+        # Query 1: Scraping Sites
+        q1 = 'scrape these sites: {"cloudrift": "https://www.cloudrift.ai/inference", "deepinfra": "https://deepinfra.com/pricing", "fireworks": "https://fireworks.ai/pricing#serverless-pricing", "groq": "https://groq.com/pricing"}'
         print(f"\nQuery 1: {q1}\n")
         await chat_session.process_query(q1)
         
-        # Query 2
-        q2 = "How much does deepinfra (https://deepinfra.com/pricing) charge for deepseek v3"
+        # Query 2: CloudRift DeepSeek V3
+        q2 = "How much does cloudrift ai (https://www.cloudrift.ai/inference) charge for deepseek v3?"
         print(f"\nQuery 2: {q2}\n")
         await chat_session.process_query(q2)
         
-        # Query 3
-        q3 = "Compare cloudrift ai and deepinfra's costs for deepseek v3"
+        # Query 3: DeepInfra DeepSeek V3
+        q3 = "How much does deepinfra (https://deepinfra.com/pricing) charge for deepseek v3"
         print(f"\nQuery 3: {q3}\n")
         await chat_session.process_query(q3)
+        
+        # Query 4: Comparison
+        q4 = "Compare cloudrift ai and deepinfra's costs for deepseek v3"
+        print(f"\nQuery 4: {q4}\n")
+        await chat_session.process_query(q4)
         
         # Show stored data
         print("\n=== SHOWING STORED DATA ===")
