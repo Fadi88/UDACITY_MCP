@@ -11,12 +11,19 @@
             }
         },
         "sqlite": {
-            "command": "uvx",
+            "command": "uv",
             "args": [
-                "mcp-server-sqlite",
-                "--db-path",
-                "test.db"
+                "run",
+                "sqlite_server.py"
+            ]
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "C:/Users/fady8/repos/UDACITY_MCP/scraped_content"
             ]
         }
     }
-}
+}

@@ -1,0 +1,171 @@
+2026-07-07 05:45:55,709 - INFO - ✓ Server 'llm_inference' initialized
+2026-07-07 05:45:56,147 - INFO - ✓ Server 'sqlite' initialized
+Secure MCP Filesystem Server running on stdio
+2026-07-07 05:45:57,115 - INFO - ✓ Server 'filesystem' initialized
+2026-07-07 05:45:57,117 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+Client does not support MCP Roots, using allowed directories set from server args: [ 'C:\Users\fady8\repos\UDACITY_MCP\scraped_content' ]
+2026-07-07 05:45:57,118 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+2026-07-07 05:45:57,124 - INFO - Attempting execution of tool 'write_query' (attempt 1/3)
+2026-07-07 05:45:57,125 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:45:57,125 - __main__ - INFO - Executing write query: 
+                CREATE TABLE IF NOT EXISTS pricing_plans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    company_name TEXT NOT NULL,
+                    plan_name TEXT NOT NULL,
+                    input_tokens REAL,
+                    output_tokens REAL,
+                    currency TEXT DEFAULT 'USD',
+                    billing_period TEXT,  -- 'monthly', 'yearly', 'one-time'
+                    features TEXT,  -- JSON array
+                    limitations TEXT,
+                    source_query TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+                 with params: None
+2026-07-07 05:45:57,142 - INFO - ✓ Data extraction tables initialized
+2026-07-07 05:46:00,696 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+
+=== STARTING AUTOMATED QUERIES ===
+
+Query 1: How much does cloudrift ai (https://www.cloudrift.ai/inference) charge for deepseek v3?
+
+I'll help you find the pricing information for DeepSeek V3 on CloudRift AI. Let me scrape their inference pricing page.2026-07-07 05:46:00,704 - INFO - Attempting execution of tool 'scrape_websites' (attempt 1/3)
+2026-07-07 05:46:00,705 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:00,705 - __main__ - INFO - FIRECRAWL_API_KEY is not set or set to 'mock'. Falling back to local offline mock client.
+2026-07-07 05:46:00,705 - __main__ - INFO - Scraping cloudrift at https://www.cloudrift.ai/inference
+2026-07-07 05:46:00,706 - __main__ - INFO - Successfully scraped cloudrift
+2026-07-07 05:46:03,658 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+
+[Using tool: scrape_websites]
+Now let me extract the pricing information:2026-07-07 05:46:03,659 - INFO - Attempting execution of tool 'extract_scraped_info' (attempt 1/3)
+2026-07-07 05:46:03,660 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:03,660 - __main__ - INFO - Extracting information for identifier: cloudrift
+2026-07-07 05:46:07,747 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+
+[Using tool: extract_scraped_info]
+According to CloudRift AI's pricing page, **DeepSeek V3** costs:
+
+- **Input**: $0.27 per 1M tokens
+- **Output**: $1.10 per 1M tokens
+
+These are competitive rates for serverless LLM inference on their sovereign GPU cloud platform.2026-07-07 05:46:10,962 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+2026-07-07 05:46:10,963 - INFO - Attempting execution of tool 'write_query' (attempt 1/3)
+2026-07-07 05:46:10,965 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:10,966 - __main__ - INFO - Executing write query: 
+                    INSERT INTO pricing_plans 
+                    (company_name, plan_name, input_tokens, output_tokens, currency, 
+                     billing_period, features, limitations, source_query)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 with params: ['CloudRift AI', 'DeepSeek V3', 0.27, 1.1, 'USD', 'per 1M tokens', '["Serverless LLM inference", "Sovereign GPU cloud platform"]', None, 'How much does cloudrift ai (https://www.cloudrift.ai/inference) charge for deepseek v3?']
+2026-07-07 05:46:10,977 - INFO - Stored 1 pricing plans
+2026-07-07 05:46:18,361 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+
+Query 2: How much does deepinfra (https://deepinfra.com/pricing) charge for deepseek v3
+
+I'll help you find out how much DeepInfra charges for DeepSeek V3. Let me scrape their pricing page.2026-07-07 05:46:18,362 - INFO - Attempting execution of tool 'scrape_websites' (attempt 1/3)
+2026-07-07 05:46:18,363 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:18,363 - __main__ - INFO - FIRECRAWL_API_KEY is not set or set to 'mock'. Falling back to local offline mock client.
+2026-07-07 05:46:18,364 - __main__ - INFO - Scraping deepinfra at https://deepinfra.com/pricing
+2026-07-07 05:46:18,364 - __main__ - INFO - Successfully scraped deepinfra
+2026-07-07 05:46:23,232 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+2026-07-07 05:46:23,232 - INFO - Attempting execution of tool 'extract_scraped_info' (attempt 1/3)
+2026-07-07 05:46:23,234 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:23,234 - __main__ - INFO - Extracting information for identifier: deepinfra
+2026-07-07 05:46:26,707 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+
+[Using tool: scrape_websites]
+
+[Using tool: extract_scraped_info]
+Based on DeepInfra's pricing page, **DeepSeek V3** costs:
+
+- **Input: $0.32 per 1M tokens**
+- **Output: $0.89 per 1M tokens**
+
+This is quite competitive pricing for a state-of-the-art model like DeepSeek V3!2026-07-07 05:46:30,206 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+2026-07-07 05:46:30,206 - INFO - Attempting execution of tool 'write_query' (attempt 1/3)
+2026-07-07 05:46:30,207 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:30,208 - __main__ - INFO - Executing write query: 
+                    INSERT INTO pricing_plans 
+                    (company_name, plan_name, input_tokens, output_tokens, currency, 
+                     billing_period, features, limitations, source_query)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 with params: ['DeepInfra', 'DeepSeek V3', 0.32, 0.89, 'USD', 'per 1M tokens', '["State-of-the-art model", "Competitive pricing"]', None, 'How much does deepinfra (https://deepinfra.com/pricing) charge for deepseek v3']
+2026-07-07 05:46:30,227 - INFO - Stored 1 pricing plans
+2026-07-07 05:46:33,442 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+
+Query 3: Compare cloudrift ai and deepinfra's costs for deepseek v3
+
+I'll help you compare the costs for DeepSeek V3 between Cloudrift AI and DeepInfra. Let me scrape their pricing information.2026-07-07 05:46:33,444 - INFO - Attempting execution of tool 'scrape_websites' (attempt 1/3)
+2026-07-07 05:46:33,446 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:33,446 - __main__ - INFO - FIRECRAWL_API_KEY is not set or set to 'mock'. Falling back to local offline mock client.
+2026-07-07 05:46:33,446 - __main__ - INFO - Scraping cloudrift at https://cloudrift.ai/pricing
+2026-07-07 05:46:33,447 - __main__ - INFO - Successfully scraped cloudrift
+2026-07-07 05:46:33,447 - __main__ - INFO - Scraping deepinfra at https://deepinfra.com/pricing
+2026-07-07 05:46:33,448 - __main__ - INFO - Successfully scraped deepinfra
+2026-07-07 05:46:36,292 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+
+[Using tool: scrape_websites]
+Now let me extract the pricing information from both providers:2026-07-07 05:46:36,292 - INFO - Attempting execution of tool 'extract_scraped_info' (attempt 1/3)
+2026-07-07 05:46:36,293 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:36,293 - __main__ - INFO - Extracting information for identifier: cloudrift
+2026-07-07 05:46:36,296 - INFO - Attempting execution of tool 'extract_scraped_info' (attempt 1/3)
+2026-07-07 05:46:36,297 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:36,297 - __main__ - INFO - Extracting information for identifier: deepinfra
+2026-07-07 05:46:44,973 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+
+[Using tool: extract_scraped_info]
+
+[Using tool: extract_scraped_info]
+## DeepSeek V3 Cost Comparison
+
+Here's a comparison of DeepSeek V3 pricing between Cloudrift AI and DeepInfra:
+
+| Provider | Input (per 1M tokens) | Output (per 1M tokens) |
+|----------|----------------------|------------------------|
+| **Cloudrift AI** | $0.27 | $1.10 |
+| **DeepInfra** | $0.32 | $0.89 |
+
+### Key Findings:
+
+- **Input tokens**: Cloudrift AI is **cheaper** at $0.27 vs DeepInfra's $0.32 (saving $0.05 per 1M tokens, ~15.6% cheaper)
+- **Output tokens**: DeepInfra is **cheaper** at $0.89 vs Cloudrift AI's $1.10 (saving $0.21 per 1M tokens, ~19.1% cheaper)
+
+### Which to choose?
+
+- **Choose Cloudrift AI** if your use case involves processing large amounts of input with shorter responses (e.g., summarization, classification, analysis)
+- **Choose DeepInfra** if your use case generates long outputs (e.g., content generation, creative writing, detailed explanations)
+
+For example:
+- A workload with 1M input tokens and 1M output tokens would cost **$1.37 on Cloudrift** vs **$1.21 on DeepInfra** (~13% cheaper on DeepInfra)
+- A workload with 10M input tokens and 1M output tokens would cost **$3.80 on Cloudrift** vs **$4.09 on DeepInfra** (~7% cheaper on Cloudrift)2026-07-07 05:46:50,674 - INFO - HTTP Request: POST https://claude.vocareum.com/v1/messages "HTTP/1.1 200 OK"
+2026-07-07 05:46:50,675 - INFO - Attempting execution of tool 'write_query' (attempt 1/3)
+2026-07-07 05:46:50,677 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:50,677 - __main__ - INFO - Executing write query: 
+                    INSERT INTO pricing_plans 
+                    (company_name, plan_name, input_tokens, output_tokens, currency, 
+                     billing_period, features, limitations, source_query)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 with params: ['DeepSeek V3 Comparison', 'Cloudrift AI - DeepSeek V3', 0.27, 1.1, 'USD', 'per_million_tokens', '["Better for processing large amounts of input with shorter responses", "Suitable for summarization, classification, analysis", "15.6% cheaper input tokens than DeepInfra"]', 'Higher output token cost compared to DeepInfra', "Compare cloudrift ai and deepinfra's costs for deepseek v3"]
+2026-07-07 05:46:50,687 - INFO - Attempting execution of tool 'write_query' (attempt 1/3)
+2026-07-07 05:46:50,688 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:50,688 - __main__ - INFO - Executing write query: 
+                    INSERT INTO pricing_plans 
+                    (company_name, plan_name, input_tokens, output_tokens, currency, 
+                     billing_period, features, limitations, source_query)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 with params: ['DeepSeek V3 Comparison', 'DeepInfra - DeepSeek V3', 0.32, 0.89, 'USD', 'per_million_tokens', '["Better for generating long outputs", "Suitable for content generation, creative writing, detailed explanations", "19.1% cheaper output tokens than Cloudrift AI"]', 'Higher input token cost compared to Cloudrift AI', "Compare cloudrift ai and deepinfra's costs for deepseek v3"]
+2026-07-07 05:46:50,697 - INFO - Stored 2 pricing plans
+2026-07-07 05:46:50,697 - INFO - Attempting execution of tool 'read_query' (attempt 1/3)
+2026-07-07 05:46:50,698 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-07-07 05:46:50,698 - __main__ - INFO - Executing read query: SELECT * FROM pricing_plans ORDER BY created_at DESC LIMIT 5 with params: None
+
+=== SHOWING STORED DATA ===
+
+==================================================
+Stored Pricing Plans:
+==================================================
+- Company: DeepSeek V3 Comparison, Plan: Cloudrift AI - DeepSeek V3, Input: $0.27/1M tokens, Output: $1.1/1M tokens
+- Company: DeepSeek V3 Comparison, Plan: DeepInfra - DeepSeek V3, Input: $0.32/1M tokens, Output: $0.89/1M tokens
+- Company: DeepInfra, Plan: DeepSeek V3, Input: $0.32/1M tokens, Output: $0.89/1M tokens
+- Company: CloudRift AI, Plan: DeepSeek V3, Input: $0.27/1M tokens, Output: $1.1/1M tokens
+==================================================

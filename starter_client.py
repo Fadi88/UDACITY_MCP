@@ -163,7 +163,12 @@ class Server:
 
         for attempt in range(retries + 1):
             try:
-                result = await self.session.call_tool(tool_name, arguments)
+                logging.info(f"Attempting execution of tool '{tool_name}' (attempt {attempt + 1}/{retries + 1})")
+                result = await self.session.call_tool(
+                    tool_name, 
+                    arguments, 
+                    read_timeout_seconds=timedelta(seconds=60)
+                )
                 return result
             except Exception as e:
                 if attempt == retries:
@@ -284,25 +289,16 @@ class DataExtractor:
                     user_query
                 ]
                 
-                # Escape single quotes in strings
-                sanitized_values = []
-                for v in values:
-                    if v is None:
-                        sanitized_values.append("NULL")
-                    elif isinstance(v, (int, float)):
-                        sanitized_values.append(str(v))
-                    else:
-                        sanitized_values.append(f"'{str(v).replace("'", "''")}'")
-                
-                query = f"""
+                query = """
                     INSERT INTO pricing_plans 
                     (company_name, plan_name, input_tokens, output_tokens, currency, 
                      billing_period, features, limitations, source_query)
-                    VALUES ({", ".join(sanitized_values)})
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """
 
                 await self.sqlite_server.execute_tool("write_query", {
-                    "query": query
+                    "query": query,
+                    "parameters": values
                 })
             
             logger.info(f"Stored {len(pricing_data.get('plans', []))} pricing plans")
@@ -336,25 +332,35 @@ class ChatSession:
     async def process_query(self, query: str) -> None:
         """Process a user query and extract/store relevant data."""
         messages = [{'role': 'user', 'content': query}]
+        model_name = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20240620')
+        
         response = self.anthropic.messages.create(
             max_tokens=2024,
-            model='claude-sonnet-4-5-20250929', 
+            model=model_name,
             tools=self.available_tools,
             messages=messages
         )
         
         full_response = ""
         source_url = None
-        used_web_search = False
         
-        process_query = True
-        while process_query:
-            assistant_content = []
+        while True:
+            has_tool_use = any(content.type == 'tool_use' for content in response.content)
+            
             for content in response.content:
                 if content.type == 'text':
                     full_response += content.text
                     print(content.text, end="", flush=True)
-                elif content.type == 'tool_use':
+            
+            if not has_tool_use:
+                messages.append({'role': 'assistant', 'content': response.content})
+                break
+                
+            messages.append({'role': 'assistant', 'content': response.content})
+            
+            tool_results = []
+            for content in response.content:
+                if content.type == 'tool_use':
                     tool_name = content.name
                     tool_args = content.input
                     print(f"\n[Using tool: {tool_name}]")
@@ -366,49 +372,53 @@ class ChatSession:
                         try:
                             result = await server.execute_tool(tool_name, tool_args)
                             
-                            # Format result for Claude
-                            tool_result_content = []
                             if hasattr(result, 'content'):
+                                text_content = ""
                                 for item in result.content:
                                     if item.type == 'text':
-                                        tool_result_content.append({
-                                            'type': 'tool_result',
-                                            'tool_use_id': content.id,
-                                            'content': item.text
-                                        })
-                                        # Check for URL in result
+                                        text_content += item.text
                                         url = self._extract_url_from_result(item.text)
                                         if url:
                                             source_url = url
+                                
+                                tool_results.append({
+                                    'type': 'tool_result',
+                                    'tool_use_id': content.id,
+                                    'content': text_content
+                                })
                             else:
-                                # Fallback for simple results
-                                tool_result_content.append({
+                                tool_results.append({
                                     'type': 'tool_result',
                                     'tool_use_id': content.id,
                                     'content': str(result)
                                 })
                                 
-                            messages.append({'role': 'assistant', 'content': [content]})
-                            messages.append({'role': 'user', 'content': tool_result_content})
-                            
-                            # Get follow-up response
-                            response = self.anthropic.messages.create(
-                                max_tokens=2024,
-                                model='claude-sonnet-4-5-20250929',
-                                tools=self.available_tools,
-                                messages=messages
-                            )
-                            
                         except Exception as e:
                             print(f"\nError executing tool {tool_name}: {e}")
-                            process_query = False
+                            tool_results.append({
+                                'type': 'tool_result',
+                                'tool_use_id': content.id,
+                                'content': f"Error: {str(e)}",
+                                'is_error': True
+                            })
                     else:
                         print(f"\nUnknown tool: {tool_name}")
-                        process_query = False
-                
-            if not any(c.type == 'tool_use' for c in response.content):
-                process_query = False
-        
+                        tool_results.append({
+                            'type': 'tool_result',
+                            'tool_use_id': content.id,
+                            'content': f"Error: Unknown tool {tool_name}",
+                            'is_error': True
+                        })
+            
+            messages.append({'role': 'user', 'content': tool_results})
+            
+            response = self.anthropic.messages.create(
+                max_tokens=2024,
+                model=model_name,
+                tools=self.available_tools,
+                messages=messages
+            )
+            
         if self.data_extractor and full_response.strip():
             await self.data_extractor.extract_and_store_data(query, full_response.strip(), source_url)
 
@@ -453,9 +463,6 @@ class ChatSession:
                 "query": "SELECT * FROM pricing_plans ORDER BY created_at DESC LIMIT 5"
             })
             
-            # Parse and display result
-            # The result format depends on the sqlite server implementation, 
-            # assuming it returns a list of content items where text is the JSON result
             if hasattr(result, 'content') and result.content:
                 for item in result.content:
                     if item.type == 'text':
@@ -464,13 +471,16 @@ class ChatSession:
                             print("No data found.")
                             return
                             
-                        print("\nRecent Pricing Plans:")
+                        print("\n==================================================")
+                        print("Stored Pricing Plans:")
+                        print("==================================================")
                         for row in data:
-                            print("-" * 50)
-                            print(f"Company: {row.get('company_name')}")
-                            print(f"Plan: {row.get('plan_name')}")
-                            print(f"Price: Input ${row.get('input_tokens')}/1M, Output ${row.get('output_tokens')}/1M")
-                            print(f"Features: {row.get('features')}")
+                            company = row.get("company_name", "Unknown")
+                            plan = row.get("plan_name", "Unknown")
+                            input_price = row.get("input_tokens", "N/A")
+                            output_price = row.get("output_tokens", "N/A")
+                            print(f"- Company: {company}, Plan: {plan}, Input: ${input_price}/1M tokens, Output: ${output_price}/1M tokens")
+                        print("==================================================\n")
             else:
                  print("No data returned or unexpected format.")
         except Exception as e:
