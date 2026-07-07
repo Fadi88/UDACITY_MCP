@@ -334,12 +334,24 @@ class ChatSession:
         messages = [{'role': 'user', 'content': query}]
         model_name = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20240620')
         
-        response = self.anthropic.messages.create(
-            max_tokens=2024,
-            model=model_name,
-            tools=self.available_tools,
-            messages=messages
-        )
+        tools_to_pass = self.available_tools
+        system_prompt = None
+        if "compare" in query.lower():
+            # Exclude scraping and text file tools to force the LLM to read from sqlite DB
+            tools_to_pass = [t for t in self.available_tools if t["name"] not in ("scrape_websites", "extract_scraped_info", "read_text_file")]
+            system_prompt = "You are comparing pricing data. Since this is a comparison request, you must retrieve previously stored pricing plans from the database using read_query. Scraping is disabled for comparison requests."
+            print("\n[Enforcing database read for comparison query]")
+
+        kwargs = {
+            "max_tokens": 2024,
+            "model": model_name,
+            "tools": tools_to_pass,
+            "messages": messages
+        }
+        if system_prompt:
+            kwargs["system"] = system_prompt
+            
+        response = self.anthropic.messages.create(**kwargs)
         
         full_response = ""
         source_url = None
@@ -412,12 +424,16 @@ class ChatSession:
             
             messages.append({'role': 'user', 'content': tool_results})
             
-            response = self.anthropic.messages.create(
-                max_tokens=2024,
-                model=model_name,
-                tools=self.available_tools,
-                messages=messages
-            )
+            kwargs = {
+                "max_tokens": 2024,
+                "model": model_name,
+                "tools": tools_to_pass,
+                "messages": messages
+            }
+            if system_prompt:
+                kwargs["system"] = system_prompt
+                
+            response = self.anthropic.messages.create(**kwargs)
             
         if self.data_extractor and full_response.strip():
             await self.data_extractor.extract_and_store_data(query, full_response.strip(), source_url)
@@ -460,7 +476,7 @@ class ChatSession:
             
         try:
             result = await self.sqlite_server.execute_tool("read_query", {
-                "query": "SELECT * FROM pricing_plans ORDER BY created_at DESC LIMIT 5"
+                "query": "SELECT company_name, plan_name, input_tokens, output_tokens, currency FROM pricing_plans ORDER BY id DESC LIMIT 5"
             })
             
             if hasattr(result, 'content') and result.content:
@@ -479,7 +495,8 @@ class ChatSession:
                             plan = row.get("plan_name", "Unknown")
                             input_price = row.get("input_tokens", "N/A")
                             output_price = row.get("output_tokens", "N/A")
-                            print(f"- Company: {company}, Plan: {plan}, Input: ${input_price}/1M tokens, Output: ${output_price}/1M tokens")
+                            currency = row.get("currency", "USD")
+                            print(f"- Company: {company}, Plan: {plan}, Input: ${input_price} {currency}/1M tokens, Output: ${output_price} {currency}/1M tokens")
                         print("==================================================\n")
             else:
                  print("No data returned or unexpected format.")
